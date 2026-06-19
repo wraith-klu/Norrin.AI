@@ -1,0 +1,1 @@
+from sports_predictor.prediction_service import predict_performance

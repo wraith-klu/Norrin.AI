@@ -1,0 +1,15 @@
+[project]
+name = "elite-player-performance-predictor"
+version = "0.1.0"
+description = "End-to-end player performance prediction system for cricket, football, and NBA."
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.pyright]
+include = ["sports_predictor", "api", "dashboard", "src"]
+exclude = ["**/__pycache__", "**/.*"]
+extraPaths = ["."]

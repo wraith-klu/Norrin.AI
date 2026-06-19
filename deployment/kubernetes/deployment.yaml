@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: player-performance-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: player-performance-api
+  template:
+    metadata:
+      labels:
+        app: player-performance-api
+    spec:
+      containers:
+        - name: api
+          image: player-performance-api:latest
+          ports:
+            - containerPort: 8000

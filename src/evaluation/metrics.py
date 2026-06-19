@@ -1,0 +1,1 @@
+from sports_predictor.evaluation import evaluate_predictions

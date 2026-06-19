@@ -1,0 +1,15 @@
+sports:
+  cricket:
+    features: 85
+    lookback_window: 20
+  football:
+    features: 90
+    lookback_window: 10
+  nba:
+    features: 75
+    lookback_window: 10
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  debug: false

@@ -1,0 +1,1 @@
+from sports_predictor.models import train_sport_model

@@ -1,0 +1,16 @@
+{
+  "pythonVersion": "3.10",
+  "pythonPlatform": "Windows",
+  "venvPath": ".",
+  "extraPaths": ["."],
+  "include": [
+    "sports_predictor",
+    "api",
+    "dashboard",
+    "src"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/.*"
+  ]
+}

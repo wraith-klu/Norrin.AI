@@ -1,0 +1,1 @@
+"""Sport-specific configuration modules."""
