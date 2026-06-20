@@ -516,7 +516,7 @@ def parse_cricbuzz_squad(url: str) -> dict:
                 team2 = h1_tags[1].get_text(strip=True)
         else:
             # Fallback team names from page title
-            title_str = str(soup.title.string) if soup.title and soup.title.string else ""
+            title_str = soup.title.string if soup.title and soup.title.string else ""
             if "|" in title_str and "," in title_str:
                 teams_part = title_str.split("|")[1].split(",")[0].strip()
                 if " vs " in teams_part:

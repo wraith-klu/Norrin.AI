@@ -207,6 +207,41 @@ button, input, select, textarea {
     border-color: rgba(124,58,237,0.2);
     box-shadow: 0 4px 20px rgba(124,58,237,0.06);
 }
+
+/* ── squad card ── */
+.squad-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fbf9ff 100%) !important;
+    border: 1px solid rgba(124, 58, 237, 0.12) !important;
+    border-left: 5px solid #7c3aed !important;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 4px 24px rgba(124, 58, 237, 0.05), 0 1px 3px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.squad-card:hover {
+    border-color: rgba(124, 58, 237, 0.3) !important;
+    box-shadow: 0 12px 40px rgba(124, 58, 237, 0.09) !important;
+    transform: translateY(-2px);
+}
+
+/* ── manual card ── */
+.manual-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.07) !important;
+    border-left: 5px solid #64748b !important;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.manual-card:hover {
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06) !important;
+    transform: translateY(-2px);
+}
+
 .card-heading {
     font-size: 0.7rem; font-weight: 800;
     color: #7c3aed !important;
@@ -623,15 +658,20 @@ with tab_rt:
     )
 
     # ── Input section ──────────────────────────────────────────────────
-    input_mode = st.radio(
-        "Select Prediction Mode",
-        options=["Standard Input (Manual Details)", "Cricbuzz Squad URL Matchup"],
-        horizontal=True,
-    )
-
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
 
-    # Default values (overridden in the branches below)
+    # Dropdown to choose prediction mode
+    prediction_mode = st.selectbox(
+        "Select Prediction Mode",
+        options=[
+            "📡 Live Cricbuzz Squad Matchup (Recommended)",
+            "✍️ Standard Manual Player Entry (Custom Input)"
+        ],
+        index=0,
+        key="prediction_mode_select"
+    )
+
+    # Default values to be populated by sections
     player_name: str = ""
     opposition: str = ""
     venue: str = ""
@@ -640,83 +680,31 @@ with tab_rt:
     match_format: str = "T20"
     squad_data: dict | None = None
 
-    if input_mode == "Standard Input (Manual Details)":
-        with st.container():
-            col_player, col_match, col_config = st.columns([2, 2, 2])
+    # Mode-specific variables defaults to satisfy type analysis
+    player_name_manual: str = ""
+    opposition_manual: str = ""
+    venue_manual: str = ""
+    match_format_manual: str = "T20"
+    model_name_manual: str = ""
 
-            with col_player:
-                st.markdown('<div class="card-heading">🏏 Player</div>', unsafe_allow_html=True)
-                player_name = st.text_input(
-                    "Player Name",
-                    value="Virat Kohli",
-                    placeholder="e.g. Jasprit Bumrah",
-                    label_visibility="collapsed",
-                )
+    match_format_squad: str = "T20"
+    model_name_squad: str = ""
+    
+    # Track prediction triggers
+    run_btn_squad = False
+    run_btn_manual = False
 
-            with col_match:
-                st.markdown('<div class="card-heading">&#127942; Match Details</div>', unsafe_allow_html=True)
-                c1, c2 = st.columns(2)
-                opposition = c1.text_input("Opposition", value="Pakistan", placeholder="e.g. Australia")
-                venue = c2.text_input("Venue", value="Melbourne Cricket Ground", placeholder="e.g. Eden Gardens")
-                match_format = st.selectbox(
-                    "Match Format",
-                    options=["T20", "ODI", "Test", "IPL", "Other"],
-                    index=0,
-                    key="std_match_format",
-                )
-
-            with col_config:
-                st.markdown('<div class="card-heading">&#129302; AI Config</div>', unsafe_allow_html=True)
-                
-                models_config = [
-                    {"id": "poolside/laguna-m.1:free", "label": "Poolside: Laguna M.1 (free)", "free": True},
-                    {"id": "meta-llama/llama-3.3-70b-instruct:free", "label": "Meta: Llama 3.3 70B Instruct (free)", "free": True},
-                    {"id": "nvidia/llama-nemotron-rerank-vl-1b-v2:free", "label": "NVIDIA: Llama Nemotron Rerank VL 1B V2 (free)", "free": True},
-                    {"id": "google/gemini-2.5-flash", "label": "Google: Gemini 2.5 Flash", "free": False},
-                    {"id": "google/gemini-2.5-pro", "label": "Google: Gemini 2.5 Pro", "free": False},
-                    {"id": "openai/gpt-4o-mini", "label": "OpenAI: GPT-4o Mini", "free": False},
-                    {"id": "openai/gpt-4o", "label": "OpenAI: GPT-4o", "free": False},
-                    {"id": "meta-llama/llama-3.3-70b-instruct", "label": "Meta: Llama 3.3 70B Instruct", "free": False},
-                    {"id": "anthropic/claude-3.5-haiku", "label": "Anthropic: Claude 3.5 Haiku", "free": False},
-                    {"id": "mistralai/mixtral-8x7b-instruct", "label": "Mistral AI: Mixtral 8x7B Instruct", "free": False},
-                ]
-
-                display_options = []
-                model_id_map = {}
-                for m in models_config:
-                    indicator = "✅" if m["free"] else "❌"
-                    option_text = f"{indicator} {m['label']}"
-                    display_options.append(option_text)
-                    model_id_map[option_text] = m["id"]
-
-                selected_option = st.selectbox(
-                    "Model",
-                    options=display_options,
-                    help="Select LLM for analysis reasoning",
-                )
-                model_name = model_id_map[selected_option]
-
-        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-
-        can_run = bool(player_name.strip() and opposition.strip() and venue.strip() and api_key)
-        if not api_key:
-            st.warning("⚠️ **OpenRouter API Key is missing!** Please set `OPENROUTER_API_KEY` in your `.env` file to enable the real-time predictor.")
-
-        run_btn = st.button(
-            "🔮  Analyse & Predict Player Performance",
-            type="primary",
-            disabled=not can_run,
-            width="stretch",
-        )
-    else:
-        # Cricbuzz Squad URL Matchup
+    if prediction_mode == "📡 Live Cricbuzz Squad Matchup (Recommended)":
+        st.markdown('<div class="card-heading">📡 Live Cricbuzz Squad Matchup</div>', unsafe_allow_html=True)
+        
         squad_url = st.text_input(
             "Cricbuzz Squad URL",
             value="https://www.cricbuzz.com/cricket-match-squads/129563/eng-vs-nz-2nd-test-new-zealand-tour-of-england-2026",
-            placeholder="Paste cricbuzz match squads URL here",
+            placeholder="Paste Cricbuzz match squads URL here",
+            key="squad_url_input"
         )
         
-        btn_load = st.button("Load Squad Roster", type="secondary")
+        btn_load = st.button("Load Squad Roster", type="secondary", key="squad_load_btn")
         
         if btn_load:
             import importlib
@@ -731,14 +719,19 @@ with tab_rt:
                     st.session_state["squad_cache_url"] = squad_url
                     st.session_state["squad_cache_data"] = squad_data
                     st.success("Squad roster successfully loaded!")
-        
+                    
         # Load from session cache if URL matches
         squad_data = None
         if "squad_cache_url" in st.session_state and st.session_state["squad_cache_url"] == squad_url:
             squad_data = st.session_state.get("squad_cache_data")
             
         if squad_data:
-            st.info(f"🏆 **{squad_data['series']}** at **{squad_data['venue']}** ({squad_data['team1']} vs {squad_data['team2']})")
+            st.markdown(
+                f'<div style="background: rgba(124, 58, 237, 0.05); border-left: 4px solid #7c3aed; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; color: #1e293b;">'
+                f'🏆 <strong>{squad_data["series"]}</strong> at <strong>{squad_data["venue"]}</strong> ({squad_data["team1"]} vs {squad_data["team2"]})'
+                f'</div>',
+                unsafe_allow_html=True
+            )
             
             col_sel_p, col_sel_f, col_sel_m = st.columns([2, 1, 2])
             
@@ -772,7 +765,7 @@ with tab_rt:
                         "opp_squad": squad_data["squad1"]
                     }
                 
-                selected_player_label = st.selectbox("Select Player", options=players_list)
+                selected_player_label = st.selectbox("Select Player", options=players_list, key="squad_player_select")
                 selected_player = player_options_map.get(selected_player_label, {})
                 
             with col_sel_f:
@@ -791,7 +784,7 @@ with tab_rt:
                     
                 format_options = ["Test", "ODI", "T20", "IPL", "Other"]
                 format_index = format_options.index(detected_format) if detected_format in format_options else 2
-                match_format = st.selectbox("Match Format", options=format_options, index=format_index)
+                match_format_squad = st.selectbox("Match Format", options=format_options, index=format_index, key="squad_format_select")
                 
             with col_sel_m:
                 models_config = [
@@ -815,32 +808,123 @@ with tab_rt:
                     display_options.append(option_text)
                     model_id_map[option_text] = m["id"]
 
-                selected_option = st.selectbox(
+                selected_option_squad = st.selectbox(
                     "Model Choice",
                     options=display_options,
                     help="Select LLM for analysis reasoning",
+                    key="squad_model_select"
                 )
-                model_name = model_id_map[selected_option]
-
-            st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-            
-            can_run = bool(api_key) and bool(selected_player)
+                model_name_squad = model_id_map[selected_option_squad]
+                
+            can_run_squad = bool(api_key) and bool(selected_player)
             if not api_key:
                 st.warning("⚠️ **OpenRouter API Key is missing!** Please set `OPENROUTER_API_KEY` in your `.env` file.")
             elif not selected_player:
                 st.warning("⚠️ **No player selected.** Please ensure players are loaded in the squad roster.")
                 
-            run_btn = st.button(
-                "🔮  Analyse & Predict Player Performance",
+            run_btn_squad = st.button(
+                "🔮  Analyse & Predict Performance (Live Matchup)",
                 type="primary",
-                disabled=not can_run,
-                width="stretch",
+                disabled=not can_run_squad,
+                use_container_width=True,
                 key="squad_run_button"
             )
         else:
-            can_run = False
-            run_btn = False
-            st.info("💡 Paste a Cricbuzz squads URL and click 'Load Squad Roster' to select a player.")
+            st.info("💡 Paste a Cricbuzz Match Squads URL and click 'Load Squad Roster' to select players and opponent rosters instantly.")
+            
+    elif prediction_mode == "✍️ Standard Manual Player Entry (Custom Input)":
+        st.markdown('<div class="card-heading">✍️ Standard Manual Player Entry</div>', unsafe_allow_html=True)
+        
+        col_player, col_match, col_config = st.columns([2, 2, 2])
+
+        with col_player:
+            st.markdown('<div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">🏏 Player Name</div>', unsafe_allow_html=True)
+            player_name_manual = st.text_input(
+                "Player Name",
+                value="Virat Kohli",
+                placeholder="e.g. Jasprit Bumrah",
+                label_visibility="collapsed",
+                key="manual_player_input"
+            )
+
+        with col_match:
+            st.markdown('<div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">🏆 Match Details</div>', unsafe_allow_html=True)
+            c1, c2 = st.columns(2)
+            opposition_manual = c1.text_input("Opposition", value="Pakistan", placeholder="e.g. Australia", key="manual_opp_input")
+            venue_manual = c2.text_input("Venue", value="Melbourne Cricket Ground", placeholder="e.g. Eden Gardens", key="manual_venue_input")
+            match_format_manual = st.selectbox(
+                "Match Format",
+                options=["T20", "ODI", "Test", "IPL", "Other"],
+                index=0,
+                key="manual_format_select",
+            )
+
+        with col_config:
+            st.markdown('<div style="font-size: 0.78rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">🤖 AI Config</div>', unsafe_allow_html=True)
+            
+            models_config = [
+                {"id": "poolside/laguna-m.1:free", "label": "Poolside: Laguna M.1 (free)", "free": True},
+                {"id": "meta-llama/llama-3.3-70b-instruct:free", "label": "Meta: Llama 3.3 70B Instruct (free)", "free": True},
+                {"id": "nvidia/llama-nemotron-rerank-vl-1b-v2:free", "label": "NVIDIA: Llama Nemotron Rerank VL 1B V2 (free)", "free": True},
+                {"id": "google/gemini-2.5-flash", "label": "Google: Gemini 2.5 Flash", "free": False},
+                {"id": "google/gemini-2.5-pro", "label": "Google: Gemini 2.5 Pro", "free": False},
+                {"id": "openai/gpt-4o-mini", "label": "OpenAI: GPT-4o Mini", "free": False},
+                {"id": "openai/gpt-4o", "label": "OpenAI: GPT-4o", "free": False},
+                {"id": "meta-llama/llama-3.3-70b-instruct", "label": "Meta: Llama 3.3 70B Instruct", "free": False},
+                {"id": "anthropic/claude-3.5-haiku", "label": "Anthropic: Claude 3.5 Haiku", "free": False},
+                {"id": "mistralai/mixtral-8x7b-instruct", "label": "Mistral AI: Mixtral 8x7B Instruct", "free": False},
+            ]
+
+            display_options = []
+            model_id_map = {}
+            for m in models_config:
+                indicator = "✅" if m["free"] else "❌"
+                option_text = f"{indicator} {m['label']}"
+                display_options.append(option_text)
+                model_id_map[option_text] = m["id"]
+
+            selected_option_manual = st.selectbox(
+                "Model",
+                options=display_options,
+                help="Select LLM for analysis reasoning",
+                key="manual_model_select"
+            )
+            model_name_manual = model_id_map[selected_option_manual]
+
+        can_run_manual = bool(player_name_manual.strip() and opposition_manual.strip() and venue_manual.strip() and api_key)
+        if not api_key:
+            st.warning("⚠️ **OpenRouter API Key is missing!** Please set `OPENROUTER_API_KEY` in your `.env` file to enable the real-time predictor.")
+
+        run_btn_manual = st.button(
+            "🔮  Analyse & Predict Performance (Manual Entry)",
+            type="primary",
+            disabled=not can_run_manual,
+            use_container_width=True,
+            key="manual_run_button"
+        )
+
+    # ── Execute Prediction ───────────────────────────────────────────────
+    run_btn = False
+    run_mode = ""
+
+    if run_btn_squad:
+        run_btn = True
+        run_mode = "squad"
+        # Map variables for squad mode
+        player_name = selected_player["name"]
+        opposition = selected_player["opp_team"]
+        venue = (squad_data or {}).get("venue", "")
+        match_format = match_format_squad
+        model_name = model_name_squad
+    elif run_btn_manual:
+        run_btn = True
+        run_mode = "manual"
+        # Map variables for manual mode
+        player_name = player_name_manual
+        opposition = opposition_manual
+        venue = venue_manual
+        match_format = match_format_manual
+        model_name = model_name_manual
 
     if run_btn:
         steps: list[str] = []
@@ -874,7 +958,7 @@ with tab_rt:
             import importlib
             import sports_predictor.realtime_cricket
             importlib.reload(sports_predictor.realtime_cricket)
-            if input_mode == "Standard Input (Manual Details)":
+            if run_mode == "manual":
                 from sports_predictor.realtime_cricket import predict_real_player
                 result = predict_real_player(
                     player_name=player_name,
@@ -894,7 +978,7 @@ with tab_rt:
                     opposition_team=selected_player["opp_team"],
                     opponent_squad=selected_player["opp_squad"],
                     match_format=match_format,
-                    venue=(squad_data or {}).get("venue", ""),
+                    venue=venue,
                     api_key=api_key,
                     model_name=model_name,
                     status_callback=_render_steps,
@@ -1138,7 +1222,7 @@ with tab_rt:
                 margin=dict(l=60, r=60, t=40, b=40),
                 showlegend=False,
             )
-            st.plotly_chart(radar_fig, width="stretch")
+            st.plotly_chart(radar_fig, use_container_width=True)
 
         # ── Length vulnerability bar chart ────────────────────────────────
         if bat and (bat.get("length_strength") or bat.get("length_weakness")):
@@ -1173,7 +1257,7 @@ with tab_rt:
                 font=dict(color="#1e293b", family="Outfit"),
                 height=340, margin=dict(l=20, r=20, t=50, b=20),
             )
-            st.plotly_chart(bar_fig, width="stretch")
+            st.plotly_chart(bar_fig, use_container_width=True)
 
         # ── Sources accordion ──────────────────────────────────────────────
         st.markdown("<hr class='divider'>", unsafe_allow_html=True)
@@ -1265,7 +1349,7 @@ with tab_ml:
             xaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
             yaxis=dict(title="Performance", gridcolor="rgba(0,0,0,0.05)"),
         )
-        st.plotly_chart(fig_hist, width="stretch")
+        st.plotly_chart(fig_hist, use_container_width=True)
 
         fl, fr = st.columns(2)
         with fl:
@@ -1289,7 +1373,7 @@ with tab_ml:
                 xaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
                 yaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
             )
-            st.plotly_chart(fig_imp, width="stretch")
+            st.plotly_chart(fig_imp, use_container_width=True)
 
         with fr:
             st.markdown("**Recent Form**")
