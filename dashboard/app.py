@@ -1,14 +1,19 @@
 """
 dashboard/app.py
 Elite Player Performance Predictor — Premium Streamlit Dashboard.
-Tab 1: Real-Time Cricket Predictor (live web scraping + OpenRouter LLM)
-Tab 2: Offline ML Models (historical data + scikit-learn ensemble)
+Real-Time Cricket Predictor (live web scraping + OpenRouter LLM)
 """
 from __future__ import annotations
 
+import sys
 import os
 from datetime import date
 from pathlib import Path
+
+# ── Ensure repo root is on sys.path (required for Streamlit Cloud) ────────────
+_repo_root = str(Path(__file__).resolve().parents[1])
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -641,11 +646,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Tabs ───────────────────────────────────────────────────────────────
-tab_rt, tab_ml = st.tabs([
-    "⚡  Real-Time Predictor  — Live Web + AI",
-    "📊  Offline ML Models  — Historical Database",
-])
+# ── Main container ────────────────────────────────────────────────────────────
+tab_rt = st.container()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — REAL-TIME CRICKET PREDICTOR
@@ -1280,108 +1282,3 @@ with tab_rt:
                     st.markdown(f"- [{title}]({url_link}) — *{snippet}*")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# TAB 2 — OFFLINE ML MODELS
-# ═══════════════════════════════════════════════════════════════════════════════
-with tab_ml:
-    st.markdown("Predictions powered by an **ensemble ML model** trained on historical match statistics.")
-
-    from sports_predictor.config import MODEL_DIR, SPORTS
-    from sports_predictor.data_collection import clean_and_validate, load_or_create_dataset
-    from sports_predictor.models import load_model
-    from sports_predictor.prediction_service import predict_performance
-
-    df = clean_and_validate(load_or_create_dataset())
-
-    col_sb, col_content = st.columns([1, 3])
-
-    with col_sb:
-        st.markdown('<div class="card-heading">Filters</div>', unsafe_allow_html=True)
-        sport = st.selectbox("Sport", [s.title() for s in SPORTS]).lower()
-        sport_df = df[df["sport"].eq(sport)]
-        player_options = sport_df[["player_id", "player_name"]].drop_duplicates()
-        player_label = st.selectbox(
-            "Player",
-            player_options.apply(
-                lambda r: f"{r.player_id} - {r.player_name}", axis=1
-            ).tolist(),
-        )
-        player_id = int(player_label.split(" - ")[0])
-        match_date_input = st.date_input("Match date", date.today())
-        opposition_ml = st.selectbox("Opposition", sorted(sport_df["opposition"].unique()))
-        home_away = st.radio("Venue", ["home", "away"], horizontal=True)
-        opp_strength = st.slider("Opposition strength", 0.0, 1.0, 0.5, 0.05)
-        inj_risk = st.slider("Injury risk", 0.0, 1.0, 0.05, 0.05)
-        rest_days = st.number_input("Rest days", 0, 30, 4)
-
-    with col_content:
-        result_ml = predict_performance(
-            player_id=player_id,
-            sport=sport,
-            match_date=str(match_date_input),
-            opposition=opposition_ml,
-            home_away=home_away,
-            opposition_strength=opp_strength,
-            injury_risk=inj_risk,
-            days_rest=rest_days,
-        )
-
-        mc1, mc2, mc3 = st.columns(3)
-        mc1.metric("Predicted Performance", f"{result_ml.predicted_performance:.2f}")
-        mc2.metric("Confidence Interval", f"{result_ml.confidence_interval[0]:.1f}–{result_ml.confidence_interval[1]:.1f}")
-        mc3.metric("Risk Level", result_ml.risk_level)
-
-        history = sport_df[sport_df["player_id"].eq(player_id)].sort_values("match_date")
-        fig_hist = go.Figure()
-        fig_hist.add_trace(go.Scatter(
-            x=history["match_date"], y=history["performance_metric"],
-            name="Actual", line=dict(color="#a78bfa", width=2),
-            fill="tozeroy", fillcolor="rgba(167,139,250,0.05)",
-        ))
-        fig_hist.add_hline(
-            y=result_ml.predicted_performance, line_dash="dash",
-            line_color="#f472b6", annotation_text="Prediction",
-        )
-        fig_hist.update_layout(
-            height=380, margin=dict(l=10, r=10, t=30, b=10),
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#1e293b", family="Outfit"),
-            xaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
-            yaxis=dict(title="Performance", gridcolor="rgba(0,0,0,0.05)"),
-        )
-        st.plotly_chart(fig_hist, use_container_width=True)
-
-        fl, fr = st.columns(2)
-        with fl:
-            st.markdown("**Feature Importance**")
-            model_bundle = load_model(sport)
-            fp = MODEL_DIR / sport / "feature_importance.csv"
-            if not fp.exists():
-                fp = MODEL_DIR / f"{sport}_feature_importance.csv"
-            if fp.exists():
-                imp_df = pd.read_csv(fp).head(12).sort_values("importance")
-            else:
-                imp_df = model_bundle.feature_importance.head(12).sort_values("importance")
-            fig_imp = go.Figure(go.Bar(
-                x=imp_df["importance"], y=imp_df["feature"],
-                orientation="h", marker_color="#818cf8",
-            ))
-            fig_imp.update_layout(
-                height=340, margin=dict(l=10, r=10, t=10, b=10),
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#1e293b", family="Outfit"),
-                xaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
-                yaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
-            )
-            st.plotly_chart(fig_imp, use_container_width=True)
-
-        with fr:
-            st.markdown("**Recent Form**")
-            st.dataframe(
-                history.tail(10)[
-                    ["match_date", "opposition", "is_home", "days_rest",
-                     "injury_risk", "performance_metric"]
-                ],
-                width="stretch",
-                hide_index=True,
-            )
