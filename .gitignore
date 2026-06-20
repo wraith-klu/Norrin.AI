@@ -52,6 +52,7 @@ docs/_build/
 
 # Environments and Secrets
 .env
+.streamlit/secrets.toml
 .venv
 env/
 venv/

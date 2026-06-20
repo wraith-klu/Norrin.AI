@@ -660,7 +660,14 @@ with tab_rt:
     )
 
     # ── Input section ──────────────────────────────────────────────────
+    # ── Read API key: .env locally, st.secrets on Streamlit Cloud ──────────
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    if not api_key:
+        try:
+            api_key = st.secrets.get("OPENROUTER_API_KEY", "")
+        except Exception:
+            api_key = ""
+
 
     # Dropdown to choose prediction mode
     prediction_mode = st.selectbox(
