@@ -33,6 +33,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+import re
+
 # CORS middleware config to allow React frontend to connect
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +45,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def clean_path_middleware(request: Request, call_next):
+    # Normalize double slashes like //v1/... to /v1/...
+    path = request.scope.get("path", "")
+    if "//" in path:
+        request.scope["path"] = re.sub(r"/+", "/", path)
+    return await call_next(request)
+
 
 # Predictions Router
 predictions_router = APIRouter(prefix="/v1", tags=["predictions"])
