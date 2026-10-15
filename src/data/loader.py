@@ -1,1 +1,0 @@
-from sports_predictor.data_collection import load_or_create_dataset

@@ -1,0 +1,9 @@
+import unittest
+
+from app.evaluation.evaluation import evaluate_predictions
+
+
+class EvaluationTests(unittest.TestCase):
+    def test_metrics_include_r2(self):
+        metrics = evaluate_predictions([1, 2, 3], [1, 2, 3])
+        self.assertEqual(metrics["r2"], 1.0)

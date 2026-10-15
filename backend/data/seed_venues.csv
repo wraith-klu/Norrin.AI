@@ -1,0 +1,18 @@
+venue_id,venue_name,city,latitude,longitude,straight_boundary_m,square_boundary_m,pitch_type,avg_first_innings_score,avg_second_innings_score,is_day_night_ground
+wankhede,Wankhede Stadium,Mumbai,18.9389,72.8258,68.0,65.0,batting_friendly,180.0,170.0,1
+eden_gardens,Eden Gardens,Kolkata,22.5646,88.3433,72.0,68.0,batting_friendly,175.0,165.0,1
+mcg,Melbourne Cricket Ground,Melbourne,-37.8200,144.9834,83.0,80.0,balanced,160.0,150.0,1
+lords,Lord's,London,51.5306,-0.1727,78.0,74.0,balanced,155.0,145.0,0
+narendra_modi,Narendra Modi Stadium,Ahmedabad,23.0917,72.5975,75.0,70.0,balanced,170.0,160.0,1
+chinnaswamy,M. Chinnaswamy Stadium,Bengaluru,12.9788,77.5996,65.0,60.0,batting_friendly,190.0,180.0,1
+chepauk,MA Chidambaram Stadium,Chennai,13.0628,80.2793,70.0,66.0,dry_turner,158.0,148.0,1
+adelaide_oval,Adelaide Oval,Adelaide,-34.9155,138.5961,85.0,68.0,batting_friendly,172.0,162.0,1
+scg,Sydney Cricket Ground,Sydney,-33.8913,151.2248,78.0,72.0,dry_turner,162.0,152.0,1
+dharamshala,HPCA Stadium,Dharamshala,32.1979,76.3258,73.0,70.0,green_seaming,165.0,155.0,1
+hyderabad,Rajiv Gandhi Stadium,Hyderabad,17.4062,78.5505,71.0,67.0,batting_friendly,178.0,168.0,1
+trent_bridge,Trent Bridge,Nottingham,52.9368,-1.1324,72.0,66.0,batting_friendly,182.0,170.0,1
+arun_jaitley,Arun Jaitley Stadium,Delhi,28.6378,77.2435,68.0,65.0,batting_friendly,170.0,160.0,1
+kingsmead,Kingsmead,Durban,-29.8489,31.0311,76.0,72.0,bowling_friendly,150.0,140.0,1
+abu_dhabi,Sheikh Zayed Stadium,Abu Dhabi,24.4013,54.5483,77.0,74.0,balanced,158.0,148.0,1
+sabina_park,Sabina Park,Kingston,17.9789,-76.7794,74.0,71.0,bowling_friendly,152.0,142.0,0
+eden_park,Eden Park,Auckland,-36.8756,174.7444,55.0,65.0,batting_friendly,185.0,175.0,1
