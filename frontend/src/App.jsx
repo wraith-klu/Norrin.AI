@@ -13,7 +13,8 @@ import { BowlingPitchMap3D } from './components/BowlingPitchMap3D';
 import { BowlerSpeedGauge3D } from './components/BowlerSpeedGauge3D';
 import { TestInningsBreakdown3D } from './components/TestInningsBreakdown3D';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const RAW_API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
 /* ── Error Boundary: prevents white screen on render crash ─── */
 class ResultErrorBoundary extends React.Component {

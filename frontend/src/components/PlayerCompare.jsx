@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const RAW_API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
 export function PlayerCompare({ popularPlayers = [], popularTeams = [], popularVenues = [], models = [] }) {
   const [playerA, setPlayerA] = useState('Virat Kohli');
