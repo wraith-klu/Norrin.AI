@@ -81,8 +81,18 @@ def train() -> dict[str, dict[str, float]]:
     return {sport: bundle.metrics for sport, bundle in trained.items()}
 
 
-# Health Router
+# Health & Root Router
 health_router = APIRouter(tags=["health"])
+
+
+@health_router.get("/")
+def root() -> dict[str, str]:
+    return {
+        "status": "online",
+        "message": "Black Bolt AI API is live",
+        "docs": "/docs",
+        "health": "/health"
+    }
 
 
 @health_router.get("/health")
