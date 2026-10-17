@@ -1,4 +1,4 @@
-# ⚡ Black Bolt AI — Sports Performance Prediction Engine
+# ⚡ Norrin AI — Sports Performance Prediction Engine
 
 A real-time, multi-sport performance prediction and analytics platform powered by ensemble machine learning, live weather intelligence, and LLM reasoning (Google Gemini 3.6 Flash & OpenRouter fallback).
 
